@@ -44,7 +44,7 @@ The agent receives one support ticket and must:
 | priority_correct | 0.20 | Priority matches ground truth |
 | response_sent | 0.20 | A response was written |
 | response_quality | 0.20 | Response contains required keywords |
-| efficiency_bonus | 0.10 | Completed in ≤ 3 steps |
+| efficiency_bonus | 0.10 | Completed in ≤ 4 steps |
 | **Max** | **1.00** | |
 
 ### Task 2 — Medium
