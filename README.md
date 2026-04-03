@@ -228,16 +228,16 @@ curl -X POST http://localhost:8000/step \
 
 ## Baseline Scores
 
-Tested with `seed=42`:
+Tested with `seed=42`, model: `meta-llama/Llama-3.1-8B-Instruct` via HF Inference Router:
 
-| Task | Score | Notes |
+| Task | Score | Breakdown |
 |---|---|---|
-| easy | ~0.80 | Frontier models typically get classify + priority + respond correct |
-| medium | ~0.55 | Priority assignment across 5 tickets is challenging |
-| hard | ~0.35 | Full workflow with policy lookup and escalation is difficult |
-| **Average** | **~0.57** | |
+| easy | 0.20 | Response sent (0.20); missed correct classify/priority |
+| medium | 0.92 | Near-perfect triage; strong category+priority accuracy |
+| hard | 0.90 | Full workflow: classify→priority→policy→escalate→resolve |
+| **Average** | **0.67** | |
 
-> Scores vary by model. GPT-4o class models score higher; smaller models tend to miss escalation and policy steps.
+> Scores vary by model. Larger models score higher on the easy task (requires precise classification). The hard task rewards stepwise procedure — models that follow instructions do well.
 
 ---
 
