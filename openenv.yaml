@@ -1,0 +1,142 @@
+name: customer-support-ticket-resolution
+version: "1.0.0"
+description: >
+  An OpenEnv-compatible reinforcement learning environment where an AI agent
+  resolves customer support tickets. The agent must classify tickets by category
+  and priority, look up support policies, draft professional responses, escalate
+  when necessary, and close tickets. Simulates real-world enterprise support workflows.
+
+author: ""
+license: MIT
+
+tags:
+  - openenv
+  - customer-support
+  - classification
+  - nlp
+  - multi-step
+  - real-world
+
+tasks:
+  - id: easy
+    description: "Classify and respond to a single support ticket (billing, technical, account, or general)."
+    difficulty: easy
+    max_steps: 6
+    expected_score_range: [0.6, 1.0]
+    required_actions:
+      - classify
+      - set_priority
+      - respond
+      - resolve
+
+  - id: medium
+    description: "Triage a queue of 5 tickets with correct category and priority assignments using bulk_triage."
+    difficulty: medium
+    max_steps: 8
+    expected_score_range: [0.3, 0.8]
+    required_actions:
+      - bulk_triage
+
+  - id: hard
+    description: >
+      Resolve a complex enterprise billing dispute requiring policy lookup,
+      tier3 escalation, professional response, and thorough resolution.
+    difficulty: hard
+    max_steps: 12
+    expected_score_range: [0.1, 0.6]
+    required_actions:
+      - classify
+      - set_priority
+      - lookup_policy
+      - escalate
+      - respond
+      - resolve
+
+action_space:
+  type: structured_json
+  actions:
+    - name: classify
+      fields: [category]
+      category_values: [billing, technical, account, feature_request, abuse, general]
+    - name: set_priority
+      fields: [priority]
+      priority_values: [critical, high, medium, low]
+    - name: respond
+      fields: [response_text]
+    - name: escalate
+      fields: [escalation_tier, escalation_reason]
+      escalation_tier_values: [tier2, tier3, legal, executive]
+    - name: lookup_policy
+      fields: [policy_query]
+    - name: resolve
+      fields: [resolved_ticket_id, resolution_note]
+    - name: bulk_triage
+      fields: [triage_list]
+      note: "Only valid in medium task. triage_list is array of {ticket_id, category, priority}."
+
+observation_space:
+  type: structured_json
+  fields:
+    - name: step
+      type: integer
+      description: Current step count (0-indexed)
+    - name: task_id
+      type: string
+      description: "Current task: easy | medium | hard"
+    - name: tickets
+      type: array[Ticket]
+      description: List of support tickets (1 for easy/hard, 5 for medium)
+    - name: active_ticket_id
+      type: string_or_null
+      description: Which ticket the agent should focus on (hard task)
+    - name: policy_result
+      type: PolicyResult_or_null
+      description: Result of the last lookup_policy action
+    - name: action_feedback
+      type: string_or_null
+      description: Human-readable feedback on the last action
+    - name: action_valid
+      type: boolean_or_null
+      description: Whether the last action was structurally valid
+    - name: escalation_queue
+      type: array[string]
+      description: Ticket IDs currently in escalation queue
+    - name: resolved_tickets
+      type: array[string]
+      description: Ticket IDs that have been resolved
+    - name: instructions
+      type: string
+      description: Full task instructions (repeated every step)
+
+reward:
+  type: cumulative_float
+  range: [0.0, 1.0]
+  description: >
+    Cumulative reward over the episode. Partial credit is awarded at each step
+    as the agent completes sub-tasks. See task-specific reward breakdowns in README.
+  step_reward: true
+  sparse: false
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+  protocol: http_and_websocket
+  endpoints:
+    - GET /
+    - GET /info
+    - GET /health
+    - POST /reset
+    - POST /step
+    - GET /state
+    - WS /ws
+
+resources:
+  cpu: 2
+  memory_gb: 4
+  gpu_required: false
+
+docker:
+  image: customer-support-env:latest
+  port: 8000
+  build_command: "docker build -t customer-support-env:latest ."
+  run_command: "docker run -p 8000:8000 customer-support-env:latest"

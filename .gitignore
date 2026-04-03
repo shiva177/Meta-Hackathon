@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+
+# Testing
+.pytest_cache/
+.coverage
+
+# Environment variables
+.env
+.env.local
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/settings.json
+.idea/

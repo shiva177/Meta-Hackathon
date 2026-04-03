@@ -1,0 +1,50 @@
+[
+  {
+    "policy_id": "POL-BILLING-001",
+    "title": "Subscription Refund Policy",
+    "keywords": ["refund", "charge", "billing", "double charge", "overcharge", "duplicate", "money", "payment", "invoice", "cancel", "charged"],
+    "body": "Customers may request a full refund within 30 days of initial charge for new subscriptions. Pro customers receive refunds within 5-7 business days. Enterprise customers receive priority refund processing within 24 hours. Duplicate charges are refunded within 2 business days. For cancelled subscriptions that were still charged, process a full refund immediately and flag the billing system. All refund requests over $500 require manager approval before processing."
+  },
+  {
+    "policy_id": "POL-BILLING-002",
+    "title": "Enterprise Contract and Invoice Disputes",
+    "keywords": ["enterprise", "contract", "invoice", "dispute", "SLA", "credits", "overcharge", "legal", "annual", "renewal"],
+    "body": "Enterprise invoice disputes must be escalated to tier3 support within 24 hours of receipt. A dedicated account manager must be assigned within 1 business hour. Contract discrepancies require cross-referencing the signed agreement in the CRM system. SLA credits are calculated as: 10% of monthly fee per hour of downtime beyond the SLA threshold. All enterprise billing disputes exceeding $5,000 must involve the legal team. Issue a credit note and revised invoice within 3 business days of confirmed discrepancy."
+  },
+  {
+    "policy_id": "POL-ACCOUNT-001",
+    "title": "Account Security and Unauthorized Access",
+    "keywords": ["hack", "security", "unauthorized", "suspicious", "locked", "breach", "password", "access", "stolen", "compromised"],
+    "body": "Accounts with suspected unauthorized access must be immediately suspended pending investigation. Enable enhanced security logging on the account. Force a password reset on all active sessions. Notify the customer via secondary contact method if available. For enterprise accounts, notify the designated security contact and account manager within 15 minutes. Issue a security incident report within 24 hours. Do not restore account access until identity is verified through the security checklist."
+  },
+  {
+    "policy_id": "POL-ACCOUNT-002",
+    "title": "GDPR and Data Deletion Requests",
+    "keywords": ["GDPR", "data deletion", "right to be forgotten", "personal data", "privacy", "deletion", "data subject", "erasure"],
+    "body": "All GDPR Article 17 deletion requests must be acknowledged within 72 hours. Full deletion must be completed within 30 days as required by law. Deletion includes: user profile, uploaded content, usage logs, and billing history (except records required for legal compliance). Send written confirmation upon completion. Escalate to legal team for any deletion request where data is involved in an ongoing dispute or legal proceeding. Log all deletion requests in the compliance tracker."
+  },
+  {
+    "policy_id": "POL-ESCALATION-001",
+    "title": "Escalation Procedure and Tier Routing",
+    "keywords": ["escalate", "escalation", "tier2", "tier3", "manager", "supervisor", "executive", "legal", "urgent", "critical"],
+    "body": "Tier2 escalation: For issues unresolved after 2 support attempts, technical issues requiring code-level investigation, or Pro customers with billing disputes over $100. Tier3 escalation: For enterprise customers with critical issues, SLA breach claims, security incidents, or billing disputes over $1,000. Legal team: For GDPR requests, formal legal notices, fraud allegations, and IP violations. Executive escalation: For enterprise customers threatening churn with ARR > $50,000 or active PR/media situations. Response time SLAs: Tier2 = 4 hours, Tier3 = 1 hour, Legal = 24 hours, Executive = 30 minutes."
+  },
+  {
+    "policy_id": "POL-ABUSE-001",
+    "title": "Abuse and Terms of Service Violations",
+    "keywords": ["abuse", "spam", "harassment", "hate speech", "phishing", "bot", "fraud", "violation", "ban", "suspend", "scraping", "illegal"],
+    "body": "Accounts engaging in abuse or ToS violations must be suspended within 1 hour of confirmed report. Categories requiring immediate action: phishing, hate speech, illegal content, automated scraping at scale, account fraud. Suspension requires manager approval for accounts older than 1 year or with active paid subscriptions. Document all evidence before suspension. Enterprise accounts suspected of abuse must be escalated to tier3 before suspension. Provide the reporting customer with a case number and expected resolution timeline. Permanently ban accounts with 3+ confirmed abuse violations."
+  },
+  {
+    "policy_id": "POL-TECHNICAL-001",
+    "title": "Critical Technical Incident Response",
+    "keywords": ["down", "outage", "critical", "production", "API", "503", "error", "broken", "urgent", "not working", "SSO", "integration"],
+    "body": "Critical incidents (service down, API returning 500/503 errors) must be acknowledged within 15 minutes for enterprise customers and 1 hour for Pro customers. Immediately escalate to engineering team via the incident channel. Enterprise SLA requires 99.9% uptime; breaches require a post-mortem within 48 hours. For SSO issues affecting multiple users, escalate to tier3 and assign a dedicated engineer. Maintain a status page update every 30 minutes during active incidents. Do not close incident tickets until customer confirms resolution."
+  },
+  {
+    "policy_id": "POL-REFUND-ENTERPRISE-001",
+    "title": "Enterprise Refund and Credit Policy",
+    "keywords": ["enterprise", "refund", "credit", "SLA breach", "overcharged", "billing error", "invoice dispute", "annual contract"],
+    "body": "Enterprise customers who have been overcharged are entitled to an immediate full refund of the excess amount plus a 10% goodwill credit applied to their next invoice. All enterprise refund requests must be processed within 24 hours. Refunds over $10,000 require CFO approval and must include a formal apology letter from the VP of Customer Success. Repeated billing errors for the same enterprise customer trigger an automatic account review and dedicated billing specialist assignment. Escalate to tier3 for all cases and loop in the account manager."
+  }
+]
