@@ -142,14 +142,15 @@ class TestStep:
         r2 = env._cumulative_reward
         assert r2 > r1
 
-    def test_reward_does_not_increase_on_invalid_action(self, env):
+    def test_reward_decreases_on_invalid_action(self, env):
         env.reset(task_id="easy", seed=42)
         env.step(Action(action_type="classify", category="billing"))
         r1 = env._cumulative_reward
-        # Invalid action
+        # Invalid action — empty response_text should trigger penalty
         env.step(Action(action_type="respond", response_text=""))
         r2 = env._cumulative_reward
-        assert r2 == r1
+        # Penalty of -0.05 applied, reward should be lower (floor 0.0)
+        assert r2 < r1
 
 
 # ---------------------------------------------------------------------------
