@@ -239,12 +239,20 @@ Tested with `seed=42`, model: `meta-llama/Llama-3.1-8B-Instruct` via HF Inferenc
 
 | Task | Score | Breakdown |
 |---|---|---|
-| easy | 0.20 | Response sent (0.20); missed correct classify/priority |
+| easy | 0.70 | classify(0.30) + respond(0.20) + quality(0.20); missed priority |
 | medium | 0.92 | Near-perfect triage; strong category+priority accuracy |
-| hard | 0.90 | Full workflow: classify→priority→policy→escalate→resolve |
-| **Average** | **0.67** | |
+| hard | 0.90 | Full workflow; missed resolution_quality keywords |
+| **Average** | **0.84** | |
 
-> Scores vary by model. Larger models score higher on the easy task (requires precise classification). The hard task rewards stepwise procedure — models that follow instructions do well.
+```
+easy     [██████████████░░░░░░] 0.7000
+medium   [██████████████████░░] 0.9200
+hard     [██████████████████░░] 0.9000
+─────────────────────────────────────
+AVERAGE                        0.8400
+```
+
+> Scores vary by model. Easy task requires precise classification of billing/technical tickets. Hard task requires all 6 steps in order with quality response and resolution note containing domain-specific keywords.
 
 ---
 
