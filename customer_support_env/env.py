@@ -25,6 +25,9 @@ class CustomerSupportEnv:
         obs = env.state()
     """
 
+    # Penalty applied per invalid action (negative reward signal)
+    INVALID_ACTION_PENALTY: float = -0.05
+
     def __init__(self) -> None:
         self._task_instance: Optional[TaskInstance] = None
         self._current_step: int = 0
@@ -37,6 +40,7 @@ class CustomerSupportEnv:
         self._active_ticket_id: Optional[str] = None
         self._last_action_feedback: Optional[str] = None
         self._last_action_valid: Optional[bool] = None
+        self._invalid_action_count: int = 0
 
     # ------------------------------------------------------------------
     # Public interface
@@ -62,6 +66,7 @@ class CustomerSupportEnv:
         self._resolved_tickets = []
         self._last_action_feedback = None
         self._last_action_valid = None
+        self._invalid_action_count = 0
 
         # For hard task, set active ticket to the first ticket
         if task_id == "hard" and self._task_instance.tickets:
@@ -91,12 +96,23 @@ class CustomerSupportEnv:
             self._last_action_feedback = f"Invalid action: {error_msg}"
             self._last_action_valid = False
             self._current_step += 1
+            self._invalid_action_count += 1
+            # Apply penalty for invalid/repeated bad actions
+            penalty = self.INVALID_ACTION_PENALTY
+            self._cumulative_reward = round(
+                max(0.0, self._cumulative_reward + penalty), 4
+            )
             obs = self._build_observation()
             return StepResult(
                 observation=obs,
                 reward=self._cumulative_reward,
                 done=self._is_done(),
-                info={"step_reward": 0.0, "breakdown": {}, "error": error_msg},
+                info={
+                    "step_reward": penalty,
+                    "breakdown": {},
+                    "error": error_msg,
+                    "penalty": penalty,
+                },
             )
 
         # Apply action side-effects

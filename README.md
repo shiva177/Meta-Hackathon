@@ -112,6 +112,13 @@ All actions are JSON objects with an `action_type` field:
 }
 ```
 
+### Reward & Penalty
+
+- **Partial credit**: each correct sub-step earns reward immediately (non-sparse)
+- **Invalid action penalty**: `-0.05` per invalid/malformed action (floor = 0.0)
+- **Efficiency bonus**: +0.10 for completing within the step threshold
+- **Step limit**: episode ends at max_steps — wasted steps reduce score via lost efficiency bonus
+
 ### Priority Matrix
 
 | Tier | billing | technical | account | feature_request | general |
@@ -256,7 +263,8 @@ pytest tests/ -v
 |---|---|---|---|
 | `API_BASE_URL` | Yes (inference) | `https://router.huggingface.co/v1` | LLM API endpoint |
 | `MODEL_NAME` | Yes (inference) | — | Model identifier |
-| `HF_TOKEN` | Yes (inference) | — | Hugging Face / API key |
+| `OPENAI_API_KEY` | Yes (inference) | — | OpenAI / HF API key (alias: `HF_TOKEN`) |
+| `HF_TOKEN` | Yes (inference) | — | Hugging Face API key (alias: `OPENAI_API_KEY`) |
 | `ENV_HTTP_URL` | No | `http://localhost:8000` | Environment server URL |
 | `TASK_ID` | No | `easy` | Default task for server |
 | `SEED` | No | `42` | Random seed for reproducibility |

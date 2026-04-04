@@ -2,9 +2,9 @@
 Inference Script — Customer Support Ticket Resolution Environment
 =================================================================
 Mandatory:
-  - API_BASE_URL  : LLM API endpoint  (e.g. https://router.huggingface.co/v1)
-  - MODEL_NAME    : Model identifier
-  - HF_TOKEN      : Hugging Face / API key
+  - API_BASE_URL    : LLM API endpoint  (e.g. https://router.huggingface.co/v1)
+  - MODEL_NAME      : Model identifier
+  - HF_TOKEN        : Hugging Face / API key  (alias: OPENAI_API_KEY)
 
 Optional:
   - ENV_HTTP_URL  : Base URL of the running environment server (default: http://localhost:8000)
@@ -31,7 +31,11 @@ from openai import OpenAI
 # ---------------------------------------------------------------------------
 
 API_BASE_URL: str = os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1")
-API_KEY: str = os.environ.get("HF_TOKEN") or os.environ.get("API_KEY", "EMPTY")
+API_KEY: str = (
+    os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("HF_TOKEN")
+    or os.environ.get("API_KEY", "EMPTY")
+)
 MODEL_NAME: str = os.environ.get("MODEL_NAME", "")
 ENV_HTTP_URL: str = os.environ.get("ENV_HTTP_URL", "http://localhost:8000")
 SEED: int = int(os.environ.get("SEED", "42"))
