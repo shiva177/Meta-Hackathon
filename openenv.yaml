@@ -19,10 +19,10 @@ tags:
 
 tasks:
   - id: easy
-    description: "Classify and respond to a single support ticket (billing, technical, account, or general)."
+    description: "Classify and respond to a single billing or technical support ticket with clear category signals."
     difficulty: easy
     max_steps: 6
-    expected_score_range: [0.6, 1.0]
+    expected_score_range: [0.5, 1.0]
     required_actions:
       - classify
       - set_priority
@@ -33,17 +33,18 @@ tasks:
     description: "Triage a queue of 5 tickets with correct category and priority assignments using bulk_triage."
     difficulty: medium
     max_steps: 8
-    expected_score_range: [0.3, 0.8]
+    expected_score_range: [0.4, 0.9]
     required_actions:
       - bulk_triage
 
   - id: hard
     description: >
-      Resolve a complex enterprise billing dispute requiring policy lookup,
-      tier3 escalation, professional response, and thorough resolution.
+      Resolve a complex enterprise billing dispute requiring correct policy lookup,
+      tier3 escalation, a professional response mentioning escalation, and a
+      thorough resolution note referencing refund, escalation, and account manager.
     difficulty: hard
     max_steps: 12
-    expected_score_range: [0.1, 0.6]
+    expected_score_range: [0.3, 0.75]
     required_actions:
       - classify
       - set_priority

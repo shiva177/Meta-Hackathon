@@ -213,10 +213,12 @@ class TaskInstance:
 
 def _load_easy(rng: random.Random) -> TaskInstance:
     corpus = _load_corpus()
-    # Pick a ticket with a clear category (non-abuse, non-enterprise for easy difficulty)
+    # Easy task: pick only billing or technical tickets — these have the clearest,
+    # most unambiguous category signals for an agent to classify correctly.
+    # Excludes "account" (overlaps with abuse/security) and "general" (too vague).
     candidates = [
         t for t in corpus
-        if t.get("_correct_category") in ("billing", "technical", "account", "general")
+        if t.get("_correct_category") in ("billing", "technical")
         and t.get("customer_tier") in ("free", "pro")
     ]
     raw = rng.choice(candidates)
@@ -336,6 +338,9 @@ def _load_hard(rng: random.Random) -> TaskInstance:
         escalation_required=True,
         correct_escalation_tier="tier3",
         required_policy_id="POL-BILLING-002",   # Enterprise Contract and Invoice Disputes
+        # Response must acknowledge the dispute and mention next steps
+        required_response_keywords=["escalat", "investigat"],
+        # Resolution note must reference all three: refund status, escalation, and account owner
         correct_resolution_note_keywords=["refund", "escalated", "account manager"],
     )
     return TaskInstance(

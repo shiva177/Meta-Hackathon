@@ -273,6 +273,7 @@ class TestGraders:
             escalation_required=True,
             correct_escalation_tier="tier3",
             required_policy_id="POL-BILLING-002",
+            required_response_keywords=["escalat", "investigat"],
             correct_resolution_note_keywords=["refund", "escalated", "account manager"],
         )
         policy_result = PolicyResult(
@@ -290,7 +291,10 @@ class TestGraders:
                 escalation_tier="tier3",
                 escalation_reason="Enterprise billing dispute exceeds $1000",
             ),
-            Action(action_type="respond", response_text="We have escalated your case."),
+            Action(
+                action_type="respond",
+                response_text="We have escalated your case and are investigating the billing discrepancy.",
+            ),
             Action(
                 action_type="resolve",
                 resolved_ticket_id="TKT-009",

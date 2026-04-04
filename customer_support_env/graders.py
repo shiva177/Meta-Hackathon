@@ -160,15 +160,20 @@ def grade_hard(
 ) -> Tuple[float, Dict[str, float]]:
     """
     Sub-rewards:
-      classify_correct        0.15
-      priority_correct        0.15
-      policy_looked_up        0.15
-      correct_policy_found    0.10
-      escalated               0.15
-      correct_escalation_tier 0.10
-      resolved                0.10
-      resolution_quality      0.10
+      classify_correct        0.10
+      priority_correct        0.10
+      policy_looked_up        0.10
+      correct_policy_found    0.15
+      escalated               0.10
+      correct_escalation_tier 0.15
+      respond_quality         0.15  ← must mention compensation/timeline to customer
+      resolved                0.05
+      resolution_quality      0.10  ← resolution note must contain all required keywords
     Total max: 1.00
+
+    Difficulty: the hard task requires ALL steps to be done correctly AND the
+    response + resolution must contain domain-specific language. Frontier models
+    that skip steps or write generic notes will lose significant points.
     """
     breakdown: Dict[str, float] = {
         "classify_correct": 0.0,
@@ -177,36 +182,46 @@ def grade_hard(
         "correct_policy_found": 0.0,
         "escalated": 0.0,
         "correct_escalation_tier": 0.0,
+        "respond_quality": 0.0,
         "resolved": 0.0,
         "resolution_quality": 0.0,
     }
 
     classify_action = _last_action_of_type(actions_taken, "classify")
     if classify_action and classify_action.category == ground_truth.correct_category:
-        breakdown["classify_correct"] = 0.15
+        breakdown["classify_correct"] = 0.10
 
     priority_action = _last_action_of_type(actions_taken, "set_priority")
     if priority_action and priority_action.priority == ground_truth.correct_priority:
-        breakdown["priority_correct"] = 0.15
+        breakdown["priority_correct"] = 0.10
 
     if _any_action_of_type(actions_taken, "lookup_policy"):
-        breakdown["policy_looked_up"] = 0.15
-        # Check if the correct policy was actually found
+        breakdown["policy_looked_up"] = 0.10
+        # Correct policy must have been found (not just any policy)
         if (
             last_policy_result is not None
             and last_policy_result.matched_policy_id == ground_truth.required_policy_id
         ):
-            breakdown["correct_policy_found"] = 0.10
+            breakdown["correct_policy_found"] = 0.15
 
     escalate_action = _last_action_of_type(actions_taken, "escalate")
     if escalate_action:
-        breakdown["escalated"] = 0.15
+        breakdown["escalated"] = 0.10
         if escalate_action.escalation_tier == ground_truth.correct_escalation_tier:
-            breakdown["correct_escalation_tier"] = 0.10
+            breakdown["correct_escalation_tier"] = 0.15
+
+    # Respond quality: customer-facing message must acknowledge the dispute
+    # and mention next steps (escalation or timeline)
+    respond_action = _last_action_of_type(actions_taken, "respond")
+    if respond_action and respond_action.response_text:
+        respond_kws = ground_truth.required_response_keywords or ["escalat", "review", "investigat"]
+        if _keywords_present(respond_action.response_text, respond_kws):
+            breakdown["respond_quality"] = 0.15
 
     resolve_action = _last_action_of_type(actions_taken, "resolve")
     if resolve_action and resolve_action.resolution_note:
-        breakdown["resolved"] = 0.10
+        breakdown["resolved"] = 0.05
+        # Resolution note must contain ALL required keywords (strict)
         kws = ground_truth.correct_resolution_note_keywords or []
         if kws and _keywords_present(resolve_action.resolution_note, kws):
             breakdown["resolution_quality"] = 0.10
