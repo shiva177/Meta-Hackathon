@@ -274,7 +274,7 @@ class TestGraders:
             correct_escalation_tier="tier3",
             required_policy_id="POL-BILLING-002",
             required_response_keywords=["escalat", "investigat"],
-            correct_resolution_note_keywords=["refund", "escalated", "account manager"],
+            correct_resolution_note_keywords=["credit", "escalated", "account manager"],
         )
         policy_result = PolicyResult(
             query="enterprise billing invoice dispute",
@@ -298,7 +298,7 @@ class TestGraders:
             Action(
                 action_type="resolve",
                 resolved_ticket_id="TKT-009",
-                resolution_note="Ticket refund processed. Escalated to tier3. Account manager assigned.",
+                resolution_note="Credit note issued. Escalated to tier3. Account manager assigned.",
             ),
         ]
         score, breakdown = grade_hard(actions, gt, 6, last_policy_result=policy_result)

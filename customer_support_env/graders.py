@@ -32,8 +32,12 @@ def _last_action_of_type(actions: List[Action], action_type: str) -> Optional[Ac
     return None
 
 
-def _any_action_of_type(actions: List[Action], action_type: str) -> bool:
-    return any(a.action_type == action_type for a in actions)
+def _action_index(actions: List[Action], action_type: str) -> int:
+    """Return the index of the FIRST action of given type, or -1 if not found."""
+    for i, a in enumerate(actions):
+        if a.action_type == action_type:
+            return i
+    return -1
 
 
 # ---------------------------------------------------------------------------
@@ -195,12 +199,18 @@ def grade_hard(
     if priority_action and priority_action.priority == ground_truth.correct_priority:
         breakdown["priority_correct"] = 0.10
 
-    if _any_action_of_type(actions_taken, "lookup_policy"):
+    # Order-aware policy check: lookup_policy must occur BEFORE escalate
+    lookup_idx = _action_index(actions_taken, "lookup_policy")
+    escalate_idx = _action_index(actions_taken, "escalate")
+
+    if lookup_idx >= 0:
         breakdown["policy_looked_up"] = 0.10
-        # Correct policy must have been found (not just any policy)
+        # Correct policy must be found AND lookup must happen before escalation
+        lookup_before_escalate = (escalate_idx < 0 or lookup_idx < escalate_idx)
         if (
             last_policy_result is not None
             and last_policy_result.matched_policy_id == ground_truth.required_policy_id
+            and lookup_before_escalate
         ):
             breakdown["correct_policy_found"] = 0.15
 
@@ -210,18 +220,18 @@ def grade_hard(
         if escalate_action.escalation_tier == ground_truth.correct_escalation_tier:
             breakdown["correct_escalation_tier"] = 0.15
 
-    # Respond quality: customer-facing message must acknowledge the dispute
-    # and mention next steps (escalation or timeline)
+    # Respond quality: must mention SLA/timeline/credit from policy content
+    # Generic "we escalated" is NOT enough — agent must read and apply policy
     respond_action = _last_action_of_type(actions_taken, "respond")
     if respond_action and respond_action.response_text:
-        respond_kws = ground_truth.required_response_keywords or ["escalat", "review", "investigat"]
+        respond_kws = ground_truth.required_response_keywords or ["escalat", "investigat"]
         if _keywords_present(respond_action.response_text, respond_kws):
             breakdown["respond_quality"] = 0.15
 
     resolve_action = _last_action_of_type(actions_taken, "resolve")
     if resolve_action and resolve_action.resolution_note:
         breakdown["resolved"] = 0.05
-        # Resolution note must contain ALL required keywords (strict)
+        # Resolution note must reference policy-derived terms (not just generic notes)
         kws = ground_truth.correct_resolution_note_keywords or []
         if kws and _keywords_present(resolve_action.resolution_note, kws):
             breakdown["resolution_quality"] = 0.10

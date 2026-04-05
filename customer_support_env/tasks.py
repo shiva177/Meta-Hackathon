@@ -129,7 +129,10 @@ TASK_SPECS: Dict[str, TaskSpec] = {
             "  set_priority: {action_type: 'set_priority', priority: '<critical|high|medium|low>'}\n"
             "  respond: {action_type: 'respond', response_text: '<your message to the customer>'}\n"
             "  resolve: {action_type: 'resolve', resolved_ticket_id: '<ticket_id>', resolution_note: '<internal note>'}\n\n"
-            "Complete all four steps to maximize your score. Efficiency bonus for finishing in ≤ 3 steps."
+            "Priority rules:\n"
+            "  abuse: always critical | enterprise+billing: critical | enterprise+technical: high\n"
+            "  pro+billing: high | pro+technical: medium | free+billing: medium | free+technical: low\n\n"
+            "Complete all four steps to maximize your score. Efficiency bonus for finishing in ≤ 4 steps."
         ),
     ),
     "medium": TaskSpec(
@@ -340,8 +343,9 @@ def _load_hard(rng: random.Random) -> TaskInstance:
         required_policy_id="POL-BILLING-002",   # Enterprise Contract and Invoice Disputes
         # Response must acknowledge the dispute and mention next steps
         required_response_keywords=["escalat", "investigat"],
-        # Resolution note must reference all three: refund status, escalation, and account owner
-        correct_resolution_note_keywords=["refund", "escalated", "account manager"],
+        # Resolution note must reference policy-derived terms: credit/refund action,
+        # escalation to tier3, and account manager assignment (all from POL-BILLING-002)
+        correct_resolution_note_keywords=["credit", "escalated", "account manager"],
     )
     return TaskInstance(
         spec=TASK_SPECS["hard"],
