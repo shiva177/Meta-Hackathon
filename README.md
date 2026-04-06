@@ -67,14 +67,15 @@ The agent handles an enterprise customer with a billing dispute and multiple pri
 
 | Sub-reward | Points | Condition |
 |---|---|---|
-| classify_correct | 0.15 | Category = "billing" |
-| priority_correct | 0.15 | Priority = "critical" |
-| policy_looked_up | 0.15 | lookup_policy action taken |
-| correct_policy_found | 0.10 | Correct policy retrieved |
-| escalated | 0.15 | escalate action taken |
-| correct_escalation_tier | 0.10 | Escalation to "tier3" |
-| resolved | 0.10 | resolve action taken |
-| resolution_quality | 0.10 | Resolution note contains required keywords |
+| classify_correct | 0.10 | Category = "billing" |
+| priority_correct | 0.10 | Priority = "critical" |
+| policy_looked_up | 0.10 | lookup_policy action taken |
+| correct_policy_found | 0.15 | Correct policy retrieved AND lookup before escalate |
+| escalated | 0.10 | escalate action taken |
+| correct_escalation_tier | 0.15 | Escalation to "tier3" |
+| respond_quality | 0.15 | Response contains escalation + investigation keywords |
+| resolved | 0.05 | resolve action taken with note |
+| resolution_quality | 0.10 | Resolution note contains: credit, escalated, account manager |
 | **Max** | **1.00** | |
 
 ---
