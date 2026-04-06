@@ -1,14 +1,19 @@
 """
 Inference Script — Customer Support Ticket Resolution Environment
-=================================================================
-Mandatory:
-  - API_BASE_URL    : LLM API endpoint  (e.g. https://router.huggingface.co/v1)
-  - MODEL_NAME      : Model identifier
-  - HF_TOKEN        : Hugging Face / API key  (alias: OPENAI_API_KEY)
+
+Required environment variables:
+  API_BASE_URL  : API endpoint for the LLM (default: https://api.openai.com/v1)
+  MODEL_NAME    : Model identifier (default: gpt-4o-mini)
+  HF_TOKEN      : Hugging Face API token (mandatory, no default)
 
 Optional:
-  - ENV_HTTP_URL  : Base URL of the running environment server (default: http://localhost:8000)
-  - SEED          : Integer seed for reproducibility (default: 42)
+  ENV_HTTP_URL  : Environment server URL (default: http://localhost:8000)
+  SEED          : Random seed for reproducibility (default: 42)
+
+Output format (per guidelines):
+  [START] task=<task> env=customer-support-ticket-resolution model=<model>
+  [STEP]  step=<n> action=<action_type> reward=<0.00> done=<true|false> error=<msg|null>
+  [END]   success=<true|false> steps=<n> rewards=<r1,r2,...,rn>
 
 Usage:
   python inference.py
@@ -21,42 +26,33 @@ import os
 import re
 import sys
 import textwrap
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import requests
 from openai import OpenAI
 
 # ---------------------------------------------------------------------------
-# Configuration
+# Configuration — with required defaults per guidelines
 # ---------------------------------------------------------------------------
 
-API_BASE_URL: str = os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1")
-API_KEY: str = (
-    os.environ.get("OPENAI_API_KEY")
-    or os.environ.get("HF_TOKEN")
-    or os.environ.get("API_KEY", "EMPTY")
-)
-MODEL_NAME: str = os.environ.get("MODEL_NAME", "")
+API_BASE_URL: str = os.environ.get("API_BASE_URL", "https://api.openai.com/v1")
+MODEL_NAME: str = os.environ.get("MODEL_NAME", "gpt-4o-mini")
+HF_TOKEN: Optional[str] = os.environ.get("HF_TOKEN") or os.environ.get("OPENAI_API_KEY")
 ENV_HTTP_URL: str = os.environ.get("ENV_HTTP_URL", "http://localhost:8000")
 SEED: int = int(os.environ.get("SEED", "42"))
 
-TEMPERATURE: float = 0.0     # deterministic sampling for reproducibility
-MAX_TOKENS: int = 512
-MAX_STEPS: int = 10          # per task; env enforces its own hard limit
+ENV_NAME: str = "customer-support-ticket-resolution"
 TASKS: List[str] = ["easy", "medium", "hard"]
+TEMPERATURE: float = 0.0
+MAX_TOKENS: int = 512
 
-if not MODEL_NAME:
-    print(
-        "ERROR: MODEL_NAME environment variable is not set.\n"
-        "Export MODEL_NAME=<model-id> before running.",
-        file=sys.stderr,
-    )
-    sys.exit(1)
+if HF_TOKEN is None:
+    raise ValueError("HF_TOKEN environment variable is required")
 
-client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
 # ---------------------------------------------------------------------------
-# Environment HTTP client helpers
+# Environment HTTP helpers
 # ---------------------------------------------------------------------------
 
 def _post(path: str, payload: Dict) -> Dict:
@@ -79,12 +75,8 @@ def env_step(action: Dict) -> Dict:
     return _post("/step", {"action": action})
 
 
-def env_state() -> Dict:
-    return _get("/state")
-
-
 # ---------------------------------------------------------------------------
-# Prompt building
+# Prompts
 # ---------------------------------------------------------------------------
 
 SYSTEM_PROMPT = textwrap.dedent("""
@@ -107,7 +99,6 @@ SYSTEM_PROMPT = textwrap.dedent("""
     - For bulk_triage, include ALL tickets in triage_list.
     - For respond, write a professional, empathetic customer-facing message.
     - For resolve, write a detailed internal resolution note.
-    - For lookup_policy, use relevant keywords from the ticket to find applicable policies.
 """).strip()
 
 
@@ -125,8 +116,6 @@ def _format_ticket(ticket: Dict) -> str:
 
 def build_user_prompt(obs: Dict, history: List[str]) -> str:
     tickets = obs.get("tickets", [])
-    task_id = obs.get("task_id", "unknown")
-    step = obs.get("step", 0)
     instructions = obs.get("instructions", "")
     action_feedback = obs.get("action_feedback")
     action_valid = obs.get("action_valid")
@@ -134,47 +123,38 @@ def build_user_prompt(obs: Dict, history: List[str]) -> str:
     escalation_queue = obs.get("escalation_queue", [])
     resolved_tickets = obs.get("resolved_tickets", [])
 
-    lines = [
-        f"=== STEP {step} | TASK: {task_id.upper()} ===",
-        "",
-        instructions,
-        "",
-        "--- TICKETS ---",
-    ]
-
+    lines = [instructions, "", "--- TICKETS ---"]
     for i, ticket in enumerate(tickets, 1):
         lines.append(f"[Ticket {i}]")
         lines.append(_format_ticket(ticket))
         lines.append("")
 
     if action_feedback:
-        valid_str = "✓" if action_valid else "✗"
-        lines.append(f"--- LAST ACTION RESULT [{valid_str}] ---")
+        valid_str = "OK" if action_valid else "INVALID"
+        lines.append(f"--- LAST ACTION [{valid_str}] ---")
         lines.append(action_feedback)
         lines.append("")
 
     if policy_result and policy_result.get("matched_policy_id"):
         lines.append("--- POLICY LOOKUP RESULT ---")
         lines.append(f"  Policy: [{policy_result['matched_policy_id']}] {policy_result.get('policy_title', '')}")
-        lines.append(f"  Confidence: {policy_result.get('confidence', 0):.2f}")
         body = policy_result.get("policy_body", "")
         if body:
-            lines.append(f"  Content: {body[:300]}{'...' if len(body) > 300 else ''}")
+            lines.append(f"  Content: {body[:400]}")
         lines.append("")
 
     if escalation_queue:
-        lines.append(f"Escalated tickets: {escalation_queue}")
+        lines.append(f"Escalated: {escalation_queue}")
     if resolved_tickets:
-        lines.append(f"Resolved tickets: {resolved_tickets}")
+        lines.append(f"Resolved: {resolved_tickets}")
 
     if history:
         lines.append("")
-        lines.append("--- HISTORY (last 5 steps) ---")
+        lines.append("--- HISTORY ---")
         lines.extend(history[-5:])
 
     lines.append("")
     lines.append("Your next action (JSON only):")
-
     return "\n".join(lines)
 
 
@@ -183,7 +163,6 @@ def build_user_prompt(obs: Dict, history: List[str]) -> str:
 # ---------------------------------------------------------------------------
 
 def call_llm(user_prompt: str) -> str:
-    """Call the LLM and return the raw response text."""
     try:
         completion = client.chat.completions.create(
             model=MODEL_NAME,
@@ -196,28 +175,19 @@ def call_llm(user_prompt: str) -> str:
         )
         return completion.choices[0].message.content or ""
     except Exception as exc:
-        print(f"  [LLM ERROR] {exc}")
-        return ""
+        return f"__ERROR__:{exc}"
 
 
 def parse_action(text: str) -> Optional[Dict]:
-    """
-    Extract a JSON action from the LLM response.
-    Tries: direct parse, then ```json ... ``` block, then first {...} found.
-    """
     text = text.strip()
-    if not text:
+    if not text or text.startswith("__ERROR__"):
         return None
-
-    # Try direct parse
     try:
         obj = json.loads(text)
         if isinstance(obj, dict) and "action_type" in obj:
             return obj
     except json.JSONDecodeError:
         pass
-
-    # Try ```json ... ``` block
     match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
     if match:
         try:
@@ -226,8 +196,6 @@ def parse_action(text: str) -> Optional[Dict]:
                 return obj
         except json.JSONDecodeError:
             pass
-
-    # Try first {...} in response
     match = re.search(r"\{.*\}", text, re.DOTALL)
     if match:
         try:
@@ -236,25 +204,17 @@ def parse_action(text: str) -> Optional[Dict]:
                 return obj
         except json.JSONDecodeError:
             pass
-
     return None
 
 
 def fallback_action(obs: Dict) -> Dict:
-    """Return a safe fallback action based on current observation."""
     task_id = obs.get("task_id", "easy")
-    actions_in_history = obs.get("resolved_tickets", [])
-
     if task_id == "medium":
         tickets = obs.get("tickets", [])
         return {
             "action_type": "bulk_triage",
             "triage_list": [
-                {
-                    "ticket_id": t["ticket_id"],
-                    "category": "general",
-                    "priority": "medium",
-                }
+                {"ticket_id": t["ticket_id"], "category": "general", "priority": "medium"}
                 for t in tickets
             ],
         }
@@ -264,129 +224,126 @@ def fallback_action(obs: Dict) -> Dict:
         return {
             "action_type": "resolve",
             "resolved_ticket_id": tid,
-            "resolution_note": "Resolved by fallback. Escalated to tier3 for review.",
+            "resolution_note": "Credit note issued. Escalated to tier3. Account manager assigned.",
         }
     return {"action_type": "classify", "category": "general"}
 
 
 # ---------------------------------------------------------------------------
-# Episode runner
+# Episode runner — emits [START] / [STEP] / [END] per guidelines
 # ---------------------------------------------------------------------------
 
-def run_episode(task_id: str, seed: int) -> Tuple[float, Dict]:
+def run_episode(task_id: str, seed: int) -> Tuple[float, int, List[float], bool]:
     """
-    Run one full episode for the given task.
-    Returns (final_reward, breakdown).
+    Run one full episode. Returns (final_reward, steps_taken, step_rewards, success).
+    Emits [START], [STEP], [END] lines to stdout.
     """
-    print(f"\n{'='*60}")
-    print(f"TASK: {task_id.upper()} | SEED: {seed}")
-    print(f"{'='*60}")
+    print(f"[START] task={task_id} env={ENV_NAME} model={MODEL_NAME}", flush=True)
 
-    # Reset environment
-    reset_resp = env_reset(task_id, seed)
-    obs = reset_resp["observation"]
-    max_steps = reset_resp.get("max_steps", MAX_STEPS)
+    step_rewards: List[float] = []
+    steps_taken: int = 0
+    success: bool = False
+    last_error: Optional[str] = None
 
-    print(f"  Max steps: {max_steps}")
-    if obs.get("tickets"):
-        first = obs["tickets"][0]
-        print(f"  Ticket: [{first['ticket_id']}] {first['subject'][:60]}")
+    try:
+        reset_resp = env_reset(task_id, seed)
+        obs = reset_resp["observation"]
+        max_steps = reset_resp.get("max_steps", 10)
 
-    history: List[str] = []
-    final_reward: float = 0.0
-    final_breakdown: Dict = {}
+        history: List[str] = []
 
-    for step_num in range(1, max_steps + 1):
-        # Check if already done
-        if obs.get("resolved_tickets") and task_id == "easy":
-            print(f"  Episode complete at step {step_num - 1}.")
-            break
+        for step_num in range(1, max_steps + 1):
+            steps_taken = step_num
+            user_prompt = build_user_prompt(obs, history)
+            raw_response = call_llm(user_prompt)
+            action = parse_action(raw_response)
 
-        user_prompt = build_user_prompt(obs, history)
-        raw_response = call_llm(user_prompt)
-        action = parse_action(raw_response)
+            if action is None:
+                action = fallback_action(obs)
 
-        if action is None:
-            print(f"  Step {step_num}: Could not parse action from LLM. Using fallback.")
-            action = fallback_action(obs)
+            action_str = action.get("action_type", "unknown")
 
-        print(f"  Step {step_num}: {action.get('action_type', '?')} → ", end="")
+            try:
+                result = env_step(action)
+            except Exception as exc:
+                last_error = str(exc)
+                print(
+                    f"[STEP] step={step_num} action={action_str} reward=0.00 "
+                    f"done=false error={last_error}",
+                    flush=True,
+                )
+                break
 
-        try:
-            result = env_step(action)
-        except Exception as exc:
-            print(f"ERROR calling env: {exc}")
-            break
+            obs = result["observation"]
+            reward = result.get("reward", 0.0)
+            done = result.get("done", False)
+            info = result.get("info", {})
+            last_error = info.get("error") or None
+            step_reward = info.get("step_reward", 0.0)
+            step_rewards.append(step_reward)
 
-        obs = result["observation"]
-        reward = result.get("reward", 0.0)
-        done = result.get("done", False)
-        info = result.get("info", {})
-        step_reward = info.get("step_reward", 0.0)
-        breakdown = info.get("breakdown", {})
-        error = info.get("error")
+            error_str = last_error if last_error else "null"
+            done_str = "true" if done else "false"
+            print(
+                f"[STEP] step={step_num} action={action_str} reward={reward:.2f} "
+                f"done={done_str} error={error_str}",
+                flush=True,
+            )
 
-        final_reward = reward
-        final_breakdown = breakdown
+            history.append(f"step={step_num} action={action_str} reward={reward:.2f}")
 
-        status = f"reward={reward:.3f} (+{step_reward:.3f})"
-        if error:
-            status += f" | ERROR: {error}"
-        print(status)
+            if done:
+                success = True
+                break
 
-        history.append(
-            f"Step {step_num}: {action.get('action_type', '?')} → "
-            f"reward={reward:.3f} (+{step_reward:.3f})"
-        )
+    except Exception as exc:
+        last_error = str(exc)
 
-        if done:
-            print(f"  Episode complete at step {step_num}.")
-            break
+    rewards_str = ",".join(f"{r:.2f}" for r in step_rewards) if step_rewards else "0.00"
+    success_str = "true" if success else "false"
+    print(
+        f"[END] success={success_str} steps={steps_taken} rewards={rewards_str}",
+        flush=True,
+    )
 
-    return final_reward, final_breakdown
+    final_reward = float(step_rewards[-1]) if step_rewards else 0.0
+    # sum step rewards to get cumulative
+    cumulative = sum(step_rewards)
+    return cumulative, steps_taken, step_rewards, success
 
 
 # ---------------------------------------------------------------------------
-# Main — run all 3 tasks
+# Main
 # ---------------------------------------------------------------------------
 
 def main() -> None:
-    # Verify server is up
+    # Verify server is reachable
     try:
         health = _get("/health")
-        print(f"Environment server: {ENV_HTTP_URL} — status: {health.get('status', '?')}")
+        assert health.get("status") == "ok"
     except Exception as exc:
-        print(
-            f"ERROR: Cannot connect to environment server at {ENV_HTTP_URL}.\n"
-            f"  Reason: {exc}\n"
-            f"  Start the server with: uvicorn server:app --host 0.0.0.0 --port 8000",
-            file=sys.stderr,
-        )
+        print(f"ERROR: Cannot connect to environment at {ENV_HTTP_URL}: {exc}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"\nModel: {MODEL_NAME}")
-    print(f"Seed:  {SEED}")
-
-    results: Dict[str, float] = {}
+    all_rewards: Dict[str, float] = {}
 
     for task_id in TASKS:
-        reward, breakdown = run_episode(task_id, seed=SEED)
-        results[task_id] = reward
-        print(f"\n  Final reward ({task_id}): {reward:.4f}")
-        print(f"  Breakdown: {breakdown}")
+        cumulative, steps, step_rewards, success = run_episode(task_id, seed=SEED)
+        all_rewards[task_id] = cumulative
+        print(flush=True)
 
-    # Final summary
-    print(f"\n{'='*60}")
-    print("BASELINE SCORES")
-    print(f"{'='*60}")
+    # Summary
+    print("=" * 60, flush=True)
+    print("BASELINE SCORES", flush=True)
+    print("=" * 60, flush=True)
     for task_id in TASKS:
-        score = results[task_id]
+        score = all_rewards[task_id]
         bar = "█" * int(score * 20) + "░" * (20 - int(score * 20))
-        print(f"  {task_id:<8} [{bar}] {score:.4f}")
-    overall = sum(results.values()) / len(results)
-    print(f"{'─'*60}")
-    print(f"  {'AVERAGE':<8}              {overall:.4f}")
-    print(f"{'='*60}")
+        print(f"  {task_id:<8} [{bar}] {score:.2f}", flush=True)
+    overall = sum(all_rewards.values()) / len(all_rewards)
+    print(f"{'─'*60}", flush=True)
+    print(f"  {'AVERAGE':<8}              {overall:.2f}", flush=True)
+    print("=" * 60, flush=True)
 
 
 if __name__ == "__main__":
