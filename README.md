@@ -198,7 +198,9 @@ python inference.py
 The environment is deployed as an HF Space. After the Space starts:
 
 ```bash
-export ENV_HTTP_URL="https://your-username-customer-support-env.hf.space"
+export ENV_HTTP_URL="https://shiva029-customer-support-ticket-resolution.hf.space"
+export HF_TOKEN="your-token"
+export MODEL_NAME="meta-llama/Llama-3.1-8B-Instruct"
 python inference.py
 ```
 
@@ -270,10 +272,10 @@ pytest tests/ -v
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `API_BASE_URL` | Yes (inference) | `https://router.huggingface.co/v1` | LLM API endpoint |
-| `MODEL_NAME` | Yes (inference) | — | Model identifier |
-| `OPENAI_API_KEY` | Yes (inference) | — | OpenAI / HF API key (alias: `HF_TOKEN`) |
-| `HF_TOKEN` | Yes (inference) | — | Hugging Face API key (alias: `OPENAI_API_KEY`) |
+| `API_BASE_URL` | Yes (inference) | `https://api.openai.com/v1` | LLM API endpoint |
+| `MODEL_NAME` | Yes (inference) | `gpt-4o-mini` | Model identifier |
+| `HF_TOKEN` | **Mandatory** | — | Hugging Face / OpenAI API key (raises error if missing) |
+| `OPENAI_API_KEY` | No | — | Alias for `HF_TOKEN` (used as fallback if HF_TOKEN not set) |
 | `ENV_HTTP_URL` | No | `http://localhost:8000` | Environment server URL |
 | `TASK_ID` | No | `easy` | Default task for server |
 | `SEED` | No | `42` | Random seed for reproducibility |
