@@ -111,7 +111,7 @@ observation_space:
 
 reward:
   type: cumulative_float
-  range: [0.0, 1.0]
+  range: [0.01, 0.99]
   description: >
     Cumulative reward over the episode. Partial credit is awarded at each step
     as the agent completes sub-tasks. See task-specific reward breakdowns in README.

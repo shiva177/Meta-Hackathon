@@ -1,4 +1,4 @@
-# Build v5 - reward clamping enforced at server + inference layers
+# Build v6 - reward range declared as [0.01, 0.99] in openenv.yaml
 FROM python:3.11-slim
 
 # Set working directory
