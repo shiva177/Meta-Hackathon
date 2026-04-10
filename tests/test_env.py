@@ -55,7 +55,7 @@ class TestReset:
         env.reset(task_id="easy", seed=99)
         assert env._current_step == 0
         assert env._actions_taken == []
-        assert env._cumulative_reward == 0.0
+        assert env._cumulative_reward == 0.01
         assert env._done is False
 
     def test_reset_reproducible_with_seed(self, env):
@@ -206,7 +206,8 @@ class TestGraders:
         ]
         score, breakdown = grade_easy(actions, gt, step_count=4)
         # classify=0.3, priority=0.2, response_sent=0.2, response_quality=0.2, efficiency=0.1
-        assert score == pytest.approx(1.0, abs=0.01)
+        # clamped to 0.99 max (validator requires strictly < 1.0)
+        assert score == pytest.approx(0.99, abs=0.01)
         assert breakdown["classify_correct"] == 0.30
         assert breakdown["priority_correct"] == 0.20
         assert breakdown["response_sent"] == 0.20
@@ -302,7 +303,8 @@ class TestGraders:
             ),
         ]
         score, breakdown = grade_hard(actions, gt, 6, last_policy_result=policy_result)
-        assert score == pytest.approx(1.0, abs=0.01)
+        # clamped to 0.99 max (validator requires strictly < 1.0)
+        assert score == pytest.approx(0.99, abs=0.01)
 
 
 # ---------------------------------------------------------------------------

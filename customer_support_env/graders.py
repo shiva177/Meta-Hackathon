@@ -88,7 +88,7 @@ def grade_easy(
     if step_count <= 4:  # 4 required actions; bonus = no wasted steps
         breakdown["efficiency_bonus"] = 0.10
 
-    total = round(sum(breakdown.values()), 4)
+    total = round(max(0.01, min(0.99, sum(breakdown.values()))), 4)
     return total, breakdown
 
 
@@ -120,7 +120,7 @@ def grade_medium(
     # Only the LAST bulk_triage is evaluated (allows corrections)
     triage_action = _last_action_of_type(actions_taken, "bulk_triage")
     if triage_action is None or triage_action.triage_list is None:
-        return 0.0, breakdown
+        return 0.01, breakdown
 
     breakdown["triage_submitted"] = 0.10
 
@@ -148,7 +148,7 @@ def grade_medium(
     if step_count <= 3:
         breakdown["efficiency_bonus"] = 0.10
 
-    total_score = round(sum(breakdown.values()), 4)
+    total_score = round(max(0.01, min(0.99, sum(breakdown.values()))), 4)
     return total_score, breakdown
 
 
@@ -238,7 +238,7 @@ def grade_hard(
         elif not kws:
             breakdown["resolution_quality"] = 0.10
 
-    total = round(sum(breakdown.values()), 4)
+    total = round(max(0.01, min(0.99, sum(breakdown.values()))), 4)
     return total, breakdown
 
 
