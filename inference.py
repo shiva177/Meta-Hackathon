@@ -275,7 +275,7 @@ def run_episode(task_id: str, seed: int) -> Tuple[float, int, List[float], bool]
                 break
 
             obs = result["observation"]
-            reward = result.get("reward", 0.01)
+            reward = max(0.01, min(0.99, float(result.get("reward", 0.01))))
             done = result.get("done", False)
             info = result.get("info", {})
             last_error = info.get("error") or None

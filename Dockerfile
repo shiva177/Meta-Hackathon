@@ -1,3 +1,4 @@
+# Build v5 - reward clamping enforced at server + inference layers
 FROM python:3.11-slim
 
 # Set working directory

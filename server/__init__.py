@@ -131,7 +131,12 @@ async def step(request: StepRequest) -> StepResult:
             status_code=400,
             detail="Environment not initialized. Call POST /reset first.",
         )
-    return env.step(request.action)
+    result = env.step(request.action)
+    # Clamp reward to strictly (0.01, 0.99) — validator requires score not 0.0 or 1.0
+    clamped = round(max(0.01, min(0.99, result.reward)), 4)
+    if clamped != result.reward:
+        result = result.model_copy(update={"reward": clamped})
+    return result
 
 
 @app.get("/state")
