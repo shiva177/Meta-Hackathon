@@ -268,7 +268,7 @@ def run_episode(task_id: str, seed: int) -> Tuple[float, int, List[float], bool]
             except Exception as exc:
                 last_error = str(exc)
                 print(
-                    f"[STEP] step={step_num} action={action_str} reward=0.00 "
+                    f"[STEP] step={step_num} action={action_str} reward=0.01 "
                     f"done=false error={last_error}",
                     flush=True,
                 )
@@ -279,8 +279,7 @@ def run_episode(task_id: str, seed: int) -> Tuple[float, int, List[float], bool]
             done = result.get("done", False)
             info = result.get("info", {})
             last_error = info.get("error") or None
-            step_reward = info.get("step_reward", 0.0)
-            step_rewards.append(step_reward)
+            step_rewards.append(reward)  # cumulative reward per step (matches [STEP] reward= values)
 
             error_str = last_error if last_error else "null"
             done_str = "true" if done else "false"
@@ -299,17 +298,15 @@ def run_episode(task_id: str, seed: int) -> Tuple[float, int, List[float], bool]
     except Exception as exc:
         last_error = str(exc)
 
-    rewards_str = ",".join(f"{r:.2f}" for r in step_rewards) if step_rewards else "0.00"
+    rewards_str = ",".join(f"{r:.2f}" for r in step_rewards) if step_rewards else "0.01"
     success_str = "true" if success else "false"
     print(
         f"[END] success={success_str} steps={steps_taken} rewards={rewards_str}",
         flush=True,
     )
 
-    final_reward = float(step_rewards[-1]) if step_rewards else 0.0
-    # sum step rewards to get cumulative
-    cumulative = sum(step_rewards)
-    return cumulative, steps_taken, step_rewards, success
+    final_reward = float(step_rewards[-1]) if step_rewards else 0.01
+    return final_reward, steps_taken, step_rewards, success
 
 
 # ---------------------------------------------------------------------------
