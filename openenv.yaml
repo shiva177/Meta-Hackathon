@@ -22,7 +22,7 @@ tasks:
     description: "Classify and respond to a single billing or technical support ticket with clear category signals."
     difficulty: easy
     max_steps: 6
-    expected_score_range: [0.5, 1.0]
+    expected_score_range: [0.5, 0.99]
     required_actions:
       - classify
       - set_priority
